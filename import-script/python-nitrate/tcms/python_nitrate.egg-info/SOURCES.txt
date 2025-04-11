@@ -1,0 +1,9 @@
+LICENSE
+README.rst
+setup.py
+tcms/python_nitrate.egg-info/PKG-INFO
+tcms/python_nitrate.egg-info/SOURCES.txt
+tcms/python_nitrate.egg-info/dependency_links.txt
+tcms/python_nitrate.egg-info/requires.txt
+tcms/python_nitrate.egg-info/top_level.txt
+test/test-bed-prepare.py

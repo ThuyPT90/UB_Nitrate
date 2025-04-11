@@ -1,0 +1,49 @@
+{% extends "tcms_base.html" %}
+{% load static %}
+
+{% block subtitle %}Reporting{% endblock %}
+
+{% block custom_stylesheet %}
+<link rel="stylesheet" type="text/css" href="{% static "style/print.css" %}" media="print" />
+{% endblock %}
+
+{% block custom_javascript %}
+<script type="text/javascript" src="{% static "js/nitrate.report.js" %}"></script>
+<script type="text/javascript">
+Nitrate.Utils.after_page_load(Nitrate.Report.List.on_load);
+</script>
+{% endblock %}
+
+{% block contents %}
+<div id="content">
+	<div class="sprites crumble">
+		<a href="{% url "nitrate-index" %}">Home</a>
+		>> Reporting
+	</div>
+	<h1>Product</h1>
+	<div class="Detailform border-1">
+		<table class="list" border="0" cellspacing="0" cellpadding="0">
+			<tr>
+				<th>Product</th>
+				<th>Plans</th>
+				<th>Runs</th>
+				<th>Cases</th>
+			</tr>
+			{% for product_id, product_name, plans_count, runs_count, cases_count in products %}
+			<tr class="{% cycle 'even' 'odd' %}">
+				<td>
+					{% if plans_count %}
+					<a href="{% url "report-overview" product_id %}">{{ product_name }}</a>
+					{% else %}
+					{{ product_name }}
+					{% endif %}
+				</td>
+				<td>{{ plans_count }}</td>
+				<td>{{ runs_count }}</td>
+				<td>{{ cases_count }}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div><!--content over -->
+{% endblock %}

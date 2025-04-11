@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE testopia SYSTEM "testopia.dtd" [
+<!ENTITY nbsp "&#160;">
+]>
+<testopia version="1.1">
+  <testcase author="thuypt3@i-com.vn" status="PROPOSED" priority="P1" automated="1">
+    <categoryname>MP_API</categoryname>
+    <component product="MyPoint">MP_Game_BUNDLE</component>
+    <defaulttester>thuypt3@i-com.vn</defaulttester>
+    <summary>Kiểm tra cơ chế bảo vệ hoặc thu hồi khi Voucher ID bị leak</summary>
+    <setup><![CDATA[
+Ảnh đã được gán Voucher ID trong CMS.<br/>
+Có khả năng người dùng biết được mã Voucher ID (bị leak).
+]]></setup>
+    <action><![CDATA[
+1. Lấy Voucher ID từ API hoặc database.<br/>
+2. Thử sử dụng Voucher ID đó trên tài khoản không có quyền.<br/>
+3. Kiểm tra hệ thống phản hồi.<br/>
+4. Admin thực hiện thu hồi hoặc thay thế Voucher ID.<br/>
+5. Thử sử dụng lại Voucher ID đã thu hồi.<br/>
+6. Kiểm tra log hệ thống.
+]]></action>
+    <expectedresults><![CDATA[
+- Hệ thống từ chối sử dụng Voucher ID bị leak nếu không hợp lệ.<br/>
+- Voucher ID sau khi thu hồi không thể sử dụng lại.<br/>
+- Log ghi nhận các hành vi bất thường liên quan đến Voucher ID bị leak.
+]]></expectedresults>
+    <breakdown>Security_Voucher_Leak</breakdown>
+    <testplan_reference>MyPoint_GAME</testplan_reference>
+  </testcase>
+</testopia>

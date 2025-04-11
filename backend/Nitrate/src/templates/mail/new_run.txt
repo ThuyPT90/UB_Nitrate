@@ -1,0 +1,22 @@
+A new test run {{ run_id }} has been created for you.
+
+### Links ###
+Test run: {{ full_url }}
+
+### Basic run information ###
+Summary: {{ summary }}
+
+Managed: {{ manager }}.
+Default tester: {{ default_tester }}.
+
+Product: {{ product }}
+Product version: {{ product_version }}
+Build: {{ build }}
+
+Estimated time: {{ estimated_time }}
+
+Notes:
+{{ notes }}
+
+### Test plan information ###
+Test Plan: {{ plan_name }}

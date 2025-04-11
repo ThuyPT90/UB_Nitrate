@@ -1,0 +1,44 @@
+---
+image:
+  - Visual Studio 2022
+
+environment:
+  global:
+    PYTHON: "C:\\Python311-x64"
+
+  matrix:
+    - MAKE: flake8
+    - MAKE: pylint
+    - MAKE: test-codecov
+    - MAKE: build
+
+install:
+  # install MIT Kerberos for Windows
+  - SET PATH=%PATH%;"C:\\Program Files\\MIT\\Kerberos\\bin"'
+  - "curl -fsS -o kfw-4.1-amd64.msi https://web.mit.edu/kerberos/dist/kfw/4.1/kfw-4.1-amd64.msi"
+  # NOTE: always exit 0 b/c the installer needs restart but we're forcing it not to
+  - "msiexec /i kfw-4.1-amd64.msi /quiet /qn /norestart & exit 0"
+
+  # Prepend Python to the PATH of this build (this cannot be done from inside
+  # the powershell script as it would require to restart the parent CMD process).
+  # cygwin64\bin contains all commands used by 'make build'
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;C:\\Users\\appveyor\\AppData\\Roaming\\Python\\Python311\\Scripts;C:\\cygwin64\\bin;%PATH%"
+
+  - "python --version"
+  - "python -m pip install --upgrade setuptools setuptools_scm==6.0.1 "
+  - "python -m pip install --disable-pip-version-check --user --upgrade pip wheel"
+  - "python -m pip install -r devel.txt"
+
+build: off
+
+artifacts:
+  - path: 'dist\*.whl'
+    name: Python wheel for Windows
+    type: file
+
+test_script:
+  - 'sed -i "s|-p \$(which python)||" tests/check-build'
+  - 'sed -i "s|bin/activate|Scripts/activate|" tests/check-build'
+  - 'sed -i "s|--no-binary :all: gssapi|--only-binary :all: gssapi|" tests/check-build'
+  - 'sed -i "s|pip install gssapi||" tests/check-build'
+  - "make %MAKE%"

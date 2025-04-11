@@ -1,0 +1,5 @@
+requests
+setuptools
+
+[gssapi]
+gssapi

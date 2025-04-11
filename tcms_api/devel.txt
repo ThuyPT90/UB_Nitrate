@@ -1,0 +1,7 @@
+-r requirements.txt
+
+build
+codecov
+flake8
+pylint
+twine

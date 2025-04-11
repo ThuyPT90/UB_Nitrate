@@ -1,0 +1,3 @@
+[submodule "backend/Nitrate"]
+	path = backend/Nitrate
+	url = https://github.com/thuypt90/Nitrate.git

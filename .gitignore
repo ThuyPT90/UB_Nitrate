@@ -1,0 +1,5 @@
+venv/
+*.pyc
+__pycache__/
+backend/Nitrate/src/.venv/
+import-script/python-nitrate/docs/

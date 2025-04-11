@@ -1,0 +1,19 @@
+include AUTHORS CHANGELOG.rst README.rst LICENSE VERSION.txt
+include Makefile
+include src/manage.py
+
+include .eslintrc.js .dockerignore .gitignore
+include container-compose.yml
+include tox.ini
+
+graft .github
+graft contrib
+graft src/locale
+graft src/static
+graft src/templates
+graft tests
+
+include docs/Makefile docs/make.bat
+graft docs/source
+
+global-exclude *.pyc

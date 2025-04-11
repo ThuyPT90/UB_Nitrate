@@ -1,0 +1,65 @@
+<div class="mixbar">
+	<div class="marginLeft fixed">
+		<input id="js-change-parent-node" class="edit_node icon_plan left_float" type="button" value="Change parent node for plan {{ test_plan.pk }}" />
+		<input id="js-add-child-node" class="add_node icon_plan left_float" type="button" value="Add child node to current plan {{ test_plan.pk }}" />
+		<input id="js-remove-child-node" class="remove_node icon_plan left_float" {% if not test_plan.child_set.exists %}disabled{% endif %} type="button" value="Remove child node from current plan {{ test_plan.pk }}" />
+	</div>
+	<div class="treeview_toolbar_text">
+		Only displayed following items in the tree
+		<ul>
+			<li>Current plan</li>
+			<li>One level parent plan</li>
+			<li>The plans with same parent</li>
+			<li>One level children plans</li>
+		</ul>
+	</div>
+</div>
+<input type="hidden" name="plan_id" value="{{ current_plan_id }}" />
+<script type="text/javascript">
+	// Tree view data will be assigned to core/data to initialize the plans tree
+	// view by jstree.
+	Nitrate.TestPlans.TreeView.treeViewData = [
+		{% for item in plans %}
+		{
+			id: '{{ item.plan_id }}',
+			parent: '{{ item.parent_id|default:"#" }}',
+			text: [
+				'{% if item.plan_id == current_plan_id %}<strong>{% endif %}',
+				'[<a href="{{ item.get_absolute_url }}">{{ item.plan_id }}</a>] ',
+				'<a href="{{ item.get_absolute_url }}">{{ item.name }}</a> (',
+
+				{% if item.cases_count %}
+				{% if item.pk == current_plan_id %}
+				'<a href="javascript:void(0)" class="js-open-cases-tab">{{ item.cases_count }} cases</a>, ',
+				{% else %}
+				'<a href="{{ item.get_absolute_url }}#testcases">{{ item.cases_count }} cases</a>, ',
+				{% endif %}
+				{% else %}
+				'{{ item.cases_count }} cases, ',
+				{% endif %}
+
+				{% if item.runs_count %}
+				{% if item.pk == current_plan_id %}
+				'<a href="javascript:void(0)" class="js-open-runs-tab">{{ item.runs_count }} runs</a>, ',
+				{% else %}
+				'<a href="{{ item.get_absolute_url }}#testruns">{{ item.runs_count }} runs</a>, ',
+				{% endif %}
+				{% else %}
+				'{{ item.runs_count }} runs, ',
+				{% endif %}
+
+				{% if item.children_count %}
+				'<a href="javascript:void(0)">{{ item.children_count }} children</a>)',
+				{% else %}
+				'{{ item.children_count }} children)',
+				{% endif %}
+
+				'{% if item.plan_id == current_plan_id %}</strong>{% endif %}',
+			].join('')
+		},
+		{% endfor %}
+	];
+</script>
+<div id="id_tree_container" data-plan-id="{{ current_plan_id }}">
+	<div class="js-plans-treeview"></div>
+</div>

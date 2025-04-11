@@ -1,0 +1,33 @@
+<form id="property_values_form">
+	<div class="mixbar">
+		<span class="strong">Values</span>
+		<div class="right-action js-prop-value-action" data-property-id="{{ property.id }}">
+			{% if perms.management.add_tcmsenvvalue %}
+			<input id="id_value_name" type="text" name="value_name" />
+			<a id="js-add-prop-value" class="addlink " href="javascript:void(0)">Add Value</a>
+			{% endif %}
+			{% if perms.management.change_tcmsenvvalue %}
+			<a id="js-disable-prop-value" class="disablelink" href="javascript:void(0)">Disable</a>
+			<a id="js-enable-prop-value" class="enablelink" href="javascript:void(0)">Enable</a>
+			{% endif %}
+		 </div>
+	</div>
+	<ul class="groupul js-env-property-values">
+		{% for value in values %}
+		<li class={% cycle 'even' 'odd' %}>
+			<input type="checkbox" name="id" id="property_value_{{ value.id }}" value="{{ value.id }}"/>
+			<label for="property_value_{{ value.id }}">
+				<span id="id_value_{{ value.id }}" {% if not value.is_active %}class="line-through"{% endif %}>{{ value.value }}</span>
+			</label>
+			{% if perms.management.change_tcmsenvvalue %}
+			<span class="right-action">
+				<a href="javascript:void(0)" data-value-id="{{ value.id }}" class="editlink js-edit-prop-value">Rename</a>
+			</span>
+			{% endif %}
+		</li>
+		{% endfor %}
+	</ul>
+</form>
+{% if message %}
+<div class="float-tip">{{ message }}</div>
+{% endif %}

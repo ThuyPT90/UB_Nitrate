@@ -1,0 +1,82 @@
+{% load comments %}
+
+<td id="id_case_text_{{ forloop.counter }}" colspan="12">
+	<table class="case_detail">
+		<tr>
+			<td valign="top">
+				<h4>Setup:</h4>
+				<div class="content">{{ test_case_text.setup|safe }}</div>
+			</td>
+			<td valign="top">
+				<h4>Breakdown:</h4>
+				<div class="content">{{ test_case_text.breakdown|safe }}</div>
+			</td>
+			<td valign="top" rowspan="2" width="200">
+				<h4><span class="title strong">Attachment:</span></h4>
+				<ul class="ul-no-format">
+					{% for attachment_file in attachments %}
+					<li>
+						<a href="{% url "check-file" attachment_file.attachment_id %}">
+							{{ attachment_file.file_name }}
+						</a>
+					</li>
+					{% empty %}
+					<li class="grey">No attachment found</li>
+					{% endfor %}
+				</ul>
+				<h4><span class="title strong">Component:</span></h4>
+				<ul class="ul-no-format">
+					{% for component in components %}
+					<li id="display_component">{{ component.name }}</li>
+					{% empty %}
+					<li class="grey">No component found</li>
+					{% endfor %}
+				</ul>
+				<h4><span class="title strong">Tag:</span></h4>
+				<ul class="ul-no-format">
+					{% for tag in tags %}
+					<li>{{ tag }}</li>
+					{% empty %}
+					<li class="grey">No tag found</li>
+					{% endfor %}
+				</ul>
+				<h4><span class="title strong">Issue:</span></h4>
+				<ul class="ul-no-format">
+					{% for issue in test_case.get_issues %}
+					<li>
+						<a href="{{ issue.get_absolute_url }}">{{ issue.issue_key }}</a>
+						{% if issue.case_run_id %}
+						<span class="grey"> - From Run</span>
+						<a href="{% url "run-get" issue.case_run.run_id %}">{{ issue.case_run.run_id }}</a>
+						{% endif %}
+					</li>
+					{% empty %}
+					<li class="grey">No issue found</li>
+					{% endfor %}
+				</ul>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+				<h4>Actions:</h4>
+				<div class="content">{{ test_case_text.action|safe }}</div>
+			</td>
+			<td valign="top">
+				<h4>Expected Results:</h4>
+				<div class="content">{{ test_case_text.effect|safe }}</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan='3'>
+				<h4>Notes:</h4>
+				<div class="content">{{ test_case.notes|urlize|linebreaksbr }}</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" style="border:none; background:none">
+				<h4>Comments:</h4>
+				{% include 'case/comments_in_simple_case_pane.html' with comments=case_comments %}
+			</td>
+		</tr>
+	</table>
+</td>

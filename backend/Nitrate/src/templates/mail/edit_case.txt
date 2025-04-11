@@ -1,0 +1,10 @@
+TestCase [{{ summary }}] has been updated by {{ updated_by }}
+
+Case -
+{{ full_url }}?#log
+
+--
+Configure mail: {{ full_url }}/edit/
+------- You are receiving this mail because: -------
+You have subscribed to the changes of this TestCase
+You are related to this TestCase

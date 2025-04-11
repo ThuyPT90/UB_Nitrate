@@ -1,0 +1,10 @@
+TestPlan [{{ plan_name }}] has been updated by {{ updated_by }}
+
+Plan -
+{{ full_url }}
+
+--
+Configure mail: {{ full_url }}/edit/
+------- You are receiving this mail because: -------
+You have subscribed to the changes of this TestPlan
+You are related to this TestPlan

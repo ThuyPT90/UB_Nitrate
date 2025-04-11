@@ -1,0 +1,69 @@
+version: "3"
+
+# Please note that, this container-compose is only for test latest image built
+# from development branch and prod image built from released version.
+
+services:
+  db:
+    image: "mariadb:10.11.8@sha256:75f6e61397758489d1dccf95db33b6b49ebfc7ec1253d40060fdf8ceb7f938a3"
+    volumes:
+    - "nitrate_db_data:/var/lib/mysql"
+    restart: always
+    environment:
+      MYSQL_DATABASE: nitrate
+      MYSQL_ROOT_PASSWORD: nitrate
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  messagebus:
+    image: rabbitmq:3.8.12-alpine@sha256:f824ced49a6342eefb610cb6778c8b66023072374c50cebae4ec308c4a5c07b4
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_VHOST: myvhost
+
+  worker:
+    depends_on:
+    - messagebus
+    restart: always
+    image: "${DOCKER_ORG:-quay.io/nitrate}/nitrate-worker:${IMAGE_VERSION:-latest}"
+    volumes:
+    - "./contrib/compose/worker_custom_conf.py:/nitrate-config/nitrate_custom_conf.py:Z"
+    environment:
+      NITRATE_DB_ENGINE: mysql
+      NITRATE_DB_HOST: db
+      NITRATE_DB_PORT: 3306
+      NITRATE_DB_NAME: nitrate
+      NITRATE_DB_USER: root
+      NITRATE_SECRET_KEY: do-not-use-this-key-for-worker-production
+
+  web:
+    depends_on:
+    - db
+    - messagebus
+    restart: always
+    image: "${DOCKER_ORG:-quay.io/nitrate}/nitrate:${IMAGE_VERSION:-latest}"
+    ports:
+    - "8001:8080"
+    volumes:
+    - "./contrib/compose/web_custom_conf.py:/nitrate-config/nitrate_custom_conf.py:Z"
+    - "nitrate_uploads:/code/uploads:Z"
+    - "nitrate_httpd_logs:/var/log/httpd:Z"
+    environment:
+      NITRATE_DB_ENGINE: mysql
+      NITRATE_DB_HOST: db
+      NITRATE_DB_PORT: 3306
+      NITRATE_DB_NAME: nitrate
+      NITRATE_DB_USER: root
+      NITRATE_SECRET_KEY: do-not-use-this-key-for-production
+      NITRATE_MIGRATE_DB: 1
+      NITRATE_SET_DEFAULT_PERMS: 1
+      NITRATE_SUPERUSER_USERNAME: admin
+      NITRATE_SUPERUSER_PASSWORD: admin
+      NITRATE_SUPERUSER_EMAIL: admin@example.com
+
+
+# Run `docker inspect web` to see volume directory on host.
+
+volumes:
+  nitrate_db_data:
+  nitrate_uploads:
+  nitrate_httpd_logs:

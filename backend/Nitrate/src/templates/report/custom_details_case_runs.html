@@ -1,0 +1,55 @@
+{% load comments %}
+<table class="table_noborder" cellpadding="0" cellspacing="0" border="0" width="100%" id="id_table_cases">
+	<tr>
+		<th align="left" class="sortcol sortdesc" width="60">Case ID</th>
+		<th align="left" class="sortcol" width="100">Case Run ID</th>
+		<th align="left" class="sortcol">Summary</th>
+		<th align="left" class="sortcol" width="150">Category</th>
+		<th align="left" class="sortcol" width="120">Tester</th>
+		<th align="left" class="sortcol" width="120">Issues</th>
+		<th align="left" class="sortcol" width="200">Lastest Execute Time</th>
+	</tr>
+	{% for test_case_run in case_runs %}
+	<tr>
+		<td valign="top"><a href="{{ test_case_run.case.get_absolute_url }}">{{ test_case_run.case.pk }}</a></td>
+		<td valign="top"><a href="{% url "run-get" test_case_run.run_id %}#caserun_{{ test_case_run.pk }}">{{ test_case_run.pk }}</a></td>
+		<td valign="top">{{ test_case_run.case.summary }}</td>
+		<td valign="top">{{ test_case_run.case.category }}</td>
+		<td valign="top">{{ test_case_run.tested_by }}</td>
+		<td valign="top">
+		{% for issue in test_case_run.issues.all %}
+			<a href="{{ issue.get_absolute_url }}">{{ issue.issue_key }}</a>,
+		{% empty %}
+			<span class="grey"></span>
+		{% endfor %}
+		</td>
+		<td valign="top">{{ test_case_run.close_date }}</td>
+	</tr>
+
+	{% if test_case_run.comments.all %}
+	<tr>
+		<td colspan="7">Comments:</td>
+	</tr>
+	{% for comment in test_case_run.comments.all %}
+	<tr class="border-bottom">
+		<td valign="top" colspan="7">{{ comment.comment|urlize|linebreaksbr }}<span class="grey">[{{ comment.username }} {{ comment.submit_date }}]</span></td>
+	</tr>
+	{% endfor %}
+	{% endif %}
+
+	{% if test_case_run.issues.all %}
+	<tr>
+		<td colspan="7">Issues:</td>
+	</tr>
+	{% for issue in test_case_run.issues.all %}
+	<h1>bottom issues</h1>
+	<tr class="border-bottom">
+		<td valign="top" colspan="7"><a href="{{ issue.get_absolute_url }}">{{ issue.issue_key }}</a> </td>
+	</tr>
+	{% endfor %}
+	{% endif %}
+
+	{% empty %}
+	<tr><td align="center" colspan="7"><span class="grey">No data.</span></td></tr>
+	{% endfor %} {# end of looping case runs #}
+</table>

@@ -1,0 +1,217 @@
+{% extends "tcms_base.html" %}
+{% load extra_filters %}
+{% load static %}
+
+{% block subtitle %}{{ test_run.summary }}{% endblock %}
+
+{% block custom_javascript %}
+<script type="text/javascript" src="{% static "js/lib/jquery.tablednd.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nitrate.comment.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nitrate.testruns.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nitrate.toggledetail.js" %}"></script>
+<script type="text/javascript">
+{# Define the case_run_status array for all of case run status #}
+Nitrate.TestRuns.CaseRunStatus = new Array();
+{% for crs in test_case_run_status %}
+Nitrate.TestRuns.CaseRunStatus.push('{{ crs.name|lower }}');
+{% endfor %}
+Nitrate.Utils.after_page_load(Nitrate.TestRuns.Details.on_load);
+</script>
+<script type="text/javascript">
+jQ(function() {
+	initializeAddLinkDialog('TestCaseRun');
+});
+</script>
+{% endblock %}
+
+{% block content_type %}
+	<input type="hidden" name="content_type" value="testruns.testrun" />
+	<input type="hidden" name="object_pk" value="{{ test_run.pk }}" />
+	<input type="hidden" name="name" value="{{ test_run.name }}" />
+	<input type="hidden" name="description" value="{{ test_run.notes }}" />
+{% endblock %}
+
+{% block contents %}
+<div id="content">
+	<!-- Store some values for easier javascript acccess -->
+	<div id="tcms_values" class="hidden">
+		<input id="value_run_id" type="hidden" name="run_id" value="{{ test_run.run_id }}" />
+		<input id="value_product_id" type="hidden" name="product_id" value="{{ test_run.build.product_id }}" />
+	</div>
+	<div class="sprites crumble">
+		<a href="{% url "nitrate-index" %}">Home</a>
+		{% if request.GET.from_plan %}
+		&gt;&gt; <a href="{% url "plans-all" %}?is_active=on">Seach Plan</a>
+		&gt;&gt; Test Plan: <a href="{{ test_run.plan.get_absolute_url }}">[{{ test_run.plan.plan_id }}] {{ test_run.plan.name }}</a>
+		{% else %}
+		&gt;&gt; <a href="{% url "runs-all" %}">Search Runs</a>
+		{% endif %}
+		&gt;&gt; [{{ test_run.run_id }}] {{ test_run.summary }}
+	</div>
+	<div class="control">
+		{% if perms.testruns.change_testcaserun %}
+		<input id="btn_edit" type="button" value="Edit" title="Edit this test run" data-action-url="{% url "run-edit" test_run.run_id %}?from_plan={{ request.GET.from_plan }}" />
+		{% else %}
+		<input id="btn_edit" type="button" value="Edit" disabled />
+		{% endif %}
+		{% if perms.testruns.add_testrun %}
+		<input id="btn_clone" type="button" value="Clone" title="Clone test run to other test build" data-action-url="{% url 'run-clone' test_run.pk %}" />
+		{% else %}
+		<input type="button" value="Clone" disabled />
+		{% endif %}
+		{% if perms.testruns.delete_testrun %}
+		{% if test_run.manager == user or test_run.plan.author == user %}
+		<input id="btnDeleteRun" type="button" value="Delete" title="Delete the run" data-action-url="{% url "run-delete" test_run.pk %}">
+		{% endif %}
+		<input id="btn_export_csv" type="button" value="Export To CSV" title="Export cases in this run" data-action-url="{% url "run-export" test_run.pk %}?format=csv">
+		<input id="btn_export_xml" type="button" value="Export To XML" title="Export cases in this run" data-action-url="{% url "run-export" test_run.pk %}?format=xml">
+		{% endif %}
+	</div>
+	<h2 id="display_title">{{ test_run.summary }}</h2>
+	<div class="listinfo_content" style="float:left; width:auto; margin-bottom:0px;">
+		<div></div>
+		<div class="leftlistinfo">
+			<div class="listinfo">
+				<div class="title grey">Test Plan&nbsp;:</div>
+				<div class="name">
+					<a href="{{ test_run.plan.get_absolute_url }}">[{{ test_run.plan.pk }}] {{ test_run.plan.name }}</a>
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Product Version&nbsp;:</div>
+				<div class="name">
+					<a href="{% url "runs-all" %}?product={{ test_run.build.product_id }}&product_version={{ test_run.product_version_id }}" title="Search test runs of {{ test_run.product_version }}">{{ test_run.product_version }}</a>
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Manager&nbsp;:</div>
+				<div class="name">
+					<a href="{% url "user-profile" test_run.manager.username %}">{{ test_run.manager.email }}</a>
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Estimated Time&nbsp;:</div>
+				<div class="name">
+				{{ test_run.estimated_time|timedelta2string }}
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Started at&nbsp;:</div>
+				<div class="name">
+				{{ test_run.start_date|date:"Y-m-d H:i:s" }}
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Tags&nbsp;:</div>
+				<div class="name linotype">
+					<ul class="js-tag-ul">
+						{% include "run/tag_list.html" with tags=test_run.tag.all object=test_run %}
+{#						{% for tag in test_run.tag.all %}#}
+{#						<li>#}
+{#							{{ tag }}#}
+{#							{% if perms.testruns.delete_testruntag %}#}
+{#							<a href="javascript:void(0)" class="js-remove-tag" data-run-id="{{ test_run.pk }}" data-tag="{{ tag }}">#}
+{#								<img src="{% static "images/remove_small.png" %}" width="9" height="9" title="remove this tag" />#}
+{#							</a>#}
+{#							{% endif %}#}
+{#						</li>#}
+{#						{% endfor %}#}
+					</ul>
+					{% if perms.testruns.add_testruntag %}
+					<div><a class="addlink js-add-tag" href="javascript:void(0)" data-run-id="{{ test_run.run_id }}">Add Tag</a></div>
+					{% endif %}
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Environment&nbsp;:</div>
+				<div class="linotype name">
+					{% include 'run/get_environment.html' %}
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Note&nbsp;:</div>
+				<div class="name" style="max-width:500px;">{{ test_run.notes|urlize|linebreaksbr }}</div>
+				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="rightlistinfo">
+			<div class="listinfo">
+				<div class="title grey">Product&nbsp;:</div>
+				<div class="name">
+					<a href="{% url "runs-all" %}?product={{ test_run.product_version.product_id }}" title="Search test runs of {{ test_run.product_version.product }}">{{ test_run.product_version.product }}</a>
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Build&nbsp;:</div>
+				<div class="name">
+					<a href="{% url "runs-all" %}?build={{ test_run.build_id }}" title="Search test runs of {{ test_run.build_id }}">{{ test_run.build }}</a>
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Default Tester&nbsp;:</div>
+				<div class="name">
+					{% if test_run.default_tester %}
+					<a href="{% url "user-profile" test_run.default_tester.username %}">{{ test_run.default_tester.email }}</a>
+					{% else %}
+					{{ test_run.default_tester }}
+					{% endif %}
+				</div>
+			</div>
+			<div class="listinfo">
+			<div class="title grey">Status&nbsp;:</div>
+				{% if not test_run.auto_update_run_status %}
+				<div class="name">
+					{% if test_run.stop_date %}
+					<span class="pauselink"> Finished </span>
+					{% if perms.testruns.change_testrun %}
+					<input type="button" class="spadelink js-set-run-status" value="Set to Running" data-action-url="{% url "run-change-status" test_run.run_id %}?finished=0">
+					{% endif %}
+					{% else %}
+					<span class="runninglink">Running</span>
+					{% if perms.testruns.change_testrun %}
+					<input type="button" class="spadelink js-set-run-status" value="Set to Finished" data-action-url="{% url "run-change-status" test_run.run_id %}?finished=1">
+					{% endif %}
+					{% endif %}
+				</div>
+				{% else %}
+				<div class="name">
+					{% if test_run.stop_date %}
+					<span class="pauselink"> Finished </span>
+					{% else %}
+					<span class="runninglink">Running</span>
+					{% endif %}
+				</div>
+				{% endif %}
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Finished at&nbsp;:</div>
+				<div class="name">
+				{{ test_run.stop_date|date:"Y-m-d H:i:s" }}
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">CC&nbsp;:</div>
+				<div class="linotype name">
+					{% include 'run/get_cc.html' %}
+				</div>
+			</div>
+			<div class="listinfo">
+				<div class="title grey">Set Status Automatically&nbsp;:</div>
+				<div class="name"> {{ test_run.auto_update_run_status }} </div>
+			</div>
+		<div class="clear"></div>
+	</div>
+
+	<div id="run-statistics" class="statu" style="float:left;">
+	{% include 'run/status_statistics.html' %}
+	</div>
+
+	<div class="clear"></div>
+	</div>
+	<div class="Detailform border-1">
+		{% include 'run/get_case_runs.html' %}
+	</div>
+
+	<div id="showDialog" style="display: none"></div>
+</div>
+{% endblock %}

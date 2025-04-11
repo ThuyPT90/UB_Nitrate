@@ -1,0 +1,9 @@
+gssapi
+decorator
+six
+
+[:python_version < "3.13"]
+psycopg2
+
+[:python_version >= "3.13"]
+psycopg
