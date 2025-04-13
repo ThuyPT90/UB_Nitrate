@@ -939,7 +939,7 @@ class Contact(TCMSContentTypeBaseModel):
 
     class Meta:
         db_table = "tcms_contacts"
-        index_together = (("content_type", "object_pk", "site"),)
+        indexes = [models.Index(fields=("content_type", "object_pk", "site"))]
 
     @classmethod
     def create(cls, email, content_object, name=None):

@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
+import os
 load_dotenv()
+print("Loaded .env from:", os.getcwd())
 
 # -*- coding: utf-8 -*-
 
@@ -24,7 +26,8 @@ DB_ENGINE = env.get("NITRATE_DB_ENGINE", "mysql")
 SUPPORTED_DB_ENGINES = {
     "mysql": "django.db.backends.mysql",
     "sqlite": "django.db.backends.sqlite3",
-    "pgsql": "django.db.backends.postgresql",
+    "postgresql": "django.db.backends.postgresql",
+    # Thêm các backend khác nếu cần
 }
 
 DATABASES = {
@@ -81,7 +84,6 @@ USE_I18N = True
 
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale.
-USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = False

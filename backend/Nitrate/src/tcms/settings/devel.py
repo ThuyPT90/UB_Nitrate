@@ -1,7 +1,11 @@
 # Django settings for devel env.
 
 from tcms.settings.common import *
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+DB_ENGINE = os.getenv("NITRATE_DB_ENGINE", "mysql")
 # Debug settings
 DEBUG = True
 
