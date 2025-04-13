@@ -85,7 +85,7 @@ class TestPlan(TCMSActionModel):
 
     class Meta:
         db_table = "test_plans"
-        index_together = [["product", "plan_id"]]
+        indexes = [models.Index(fields=["product", "plan_id"])]
 
     def __str__(self):
         return self.name

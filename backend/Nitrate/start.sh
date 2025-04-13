@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Đi vào thư mục dự án
-cd ~/Ubun_nitrate/backend/Nitrate
+cd ~/UB_Nitrate/backend/Nitrate
 
 # Kích hoạt môi trường ảo
 # Kích hoạt venv (nếu tồn tại)
-if [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
 else
     echo "❌ Không tìm thấy môi trường ảo venv/. Hãy tạo bằng: python3 -m venv venv"
     exit 1

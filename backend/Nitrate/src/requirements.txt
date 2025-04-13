@@ -1,0 +1,16 @@
+asgiref==3.8.1
+Django==5.2
+django-contrib-comments==2.2.0
+django-debug-toolbar==5.1.0
+django-tinymce==4.1.0
+django-upgrade==1.24.0
+django-uuslug==2.0.0
+html2text==2024.2.26
+kobo @ git+https://github.com/release-engineering/kobo.git@bf38e1bb26b54f3d9f8ab9bea72215b8020a2e72
+psycopg2-binary==2.9.10
+python-dotenv==1.1.0
+python-slugify==8.0.4
+six==1.17.0
+sqlparse==0.5.3
+text-unidecode==1.3
+tokenize_rt==6.1.0

@@ -13,9 +13,9 @@ from django.contrib.contenttypes.models import ContentType
 
 class TCMSLogModel(TCMSContentTypeBaseModel):
     # Bên trong class TCMSLogModel:
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_pk = models.TextField(null=True) # ✅ thay object_id
+    content_object = GenericForeignKey('content_type', 'object_pk')  # ✅ dùng object_pk
     date = models.DateTimeField(auto_now_add=True)
     action = models.TextField()
     field = models.CharField(max_length=50, default="")
@@ -30,13 +30,13 @@ class TCMSLogModel(TCMSContentTypeBaseModel):
         abstract = False
         db_table = "tcms_logs"
         indexes = [
-            Index(fields=['object_id', 'content_type']),
+            Index(fields=['object_pk', 'content_type']),  # ✅ sửa index
         ]
 
     def __str__(self):
         return self.action
 
     @classmethod
-    def get_logs_for_model(cls, model_class, object_id):
+    def get_logs_for_model(cls, model_class, object_pk):
         ct = ContentType.objects.get_for_model(model_class)
-        return cls.objects.filter(content_type=ct, object_id=object_id)
+        return cls.objects.filter(content_type=ct, object_pk=object_pk)

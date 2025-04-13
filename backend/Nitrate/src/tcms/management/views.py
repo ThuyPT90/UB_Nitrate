@@ -111,31 +111,36 @@ class EnvironmentGroupSetStatusView(PermissionRequiredMixin, View):
 
 
 class EnvironmentGroupsListView(TemplateView):
-    """The environment groups index page"""
-
     template_name = "environment/groups.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         if "name" in self.request.GET:
-            env_groups = TCMSEnvGroup.objects.filter(name__icontains=self.request.GET["name"])
+            env_groups_qs = TCMSEnvGroup.objects.filter(name__icontains=self.request.GET["name"])
         else:
-            env_groups = TCMSEnvGroup.objects.all()
+            env_groups_qs = TCMSEnvGroup.objects.all()
 
-        # Get properties for each group
+        # ⚠️ convert pk sang string để so sánh với object_pk
+        env_group_ids = list(env_groups_qs.values_list("pk", flat=True))
+        env_group_ids_as_str = [str(pk) for pk in env_group_ids]
+
+        # Get properties
         qs = (
-            TCMSEnvGroupPropertyMap.objects.filter(group__in=env_groups)
+            TCMSEnvGroupPropertyMap.objects.filter(group__in=env_groups_qs)
             .values("group__pk", "property__name")
             .order_by("group__pk", "property__name")
             .iterator()
         )
         properties = {key: list(value) for key, value in groupby(qs, itemgetter("group__pk"))}
 
-        # Get logs for each group
+        # Get logs
         env_group_ct = ContentType.objects.get_for_model(TCMSEnvGroup)
         qs = (
-            TCMSLogModel.objects.filter(content_type=env_group_ct, object_pk__in=env_groups)
+            TCMSLogModel.objects.filter(
+                content_type=env_group_ct,
+                object_pk__in=env_group_ids_as_str
+            )
             .only(
                 "object_pk",
                 "who__username",
@@ -146,27 +151,19 @@ class EnvironmentGroupsListView(TemplateView):
             )
             .order_by("object_pk")
         )
-
-        # we have to convert object_pk to an integer due to it's a string stored in
-        # database.
         logs = {int(key): list(value) for key, value in groupby(qs, attrgetter("object_pk"))}
 
         env_groups = (
-            env_groups.select_related("modified_by", "manager")
+            env_groups_qs.select_related("modified_by", "manager")
             .order_by("is_active", "name")
             .iterator()
         )
 
-        context.update(
-            {
-                "environments": QuerySetIterationProxy(
-                    env_groups, properties=properties, another_logs=logs
-                ),
-                "module": "env",
-            }
-        )
+        context.update({
+            "environments": QuerySetIterationProxy(env_groups, properties=properties, another_logs=logs),
+            "module": "env",
+        })
         return context
-
 
 class EnvironmentGroupEditView(PermissionRequiredMixin, View):
     """Edit environment group"""
