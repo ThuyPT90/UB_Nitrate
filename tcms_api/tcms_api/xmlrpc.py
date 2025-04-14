@@ -142,7 +142,7 @@ class TCMSXmlrpc:
         Login in the web app to save a session cookie in the cookie jar!
         """
         #self.server.Auth.login(self.username, self.password)
-        self.server.Auth.legacy_login(self.username, self.password)
+        self.server.Auth.login({"username": self.username, "password": self.password})
 
 class TCMSKerbXmlrpc(TCMSXmlrpc):
     """
