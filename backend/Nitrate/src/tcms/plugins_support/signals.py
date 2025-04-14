@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Optional, Type
-
 from django.db.models import Model, signals
-
 from tcms.core.models import signals as tcms_signals
 from tcms.plugins_support.processors import pstp
 
@@ -50,14 +48,19 @@ def initial_signal_handler(instance, **kwargs):
 
 def save_signal_handler(instance, created, **kwargs):
     REGISTERED_MODELS[type(instance)].save_processor(instance, created)
-
+     # ✅ THÊM DÒNG NÀY
+    from .processors import pstp
+    pstp.push(type(instance), instance, "update" if not created else "create")
 
 def delete_signal_handler(instance, **kwargs):
     REGISTERED_MODELS[type(instance)].delete_processor(instance)
-
+    # ✅ THÊM DÒNG NÀY
+    from .processors import pstp
+    pstp.push(type(instance), instance, "delete")
 
 # Bind the signals and the models
 def register_model(model: Type[Model], sp: Optional[Type[GlobalSignalProcessor]] = None):
+    print(f"✅ đang gọi register_model")
     if model in REGISTERED_MODELS:
         return
     for parent in model._meta.parents.keys():
@@ -68,3 +71,4 @@ def register_model(model: Type[Model], sp: Optional[Type[GlobalSignalProcessor]]
     signals.post_save.connect(save_signal_handler, sender=model)
     signals.post_delete.connect(delete_signal_handler, sender=model)
     REGISTERED_MODELS[model] = sp(model)
+    print(f"✅ Đã gọi register_model cho: {model}")

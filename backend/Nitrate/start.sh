@@ -25,4 +25,4 @@ sudo service postgresql start
 
 # Chạy server Nitrate
 #python3 src/manage.py runserver
-venv/bin/python src/manage.py runserver
+.venv/bin/python src/manage.py runserver

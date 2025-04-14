@@ -35,3 +35,6 @@ DEBUG_TOOLBAR_CONFIG = {"INTERCEPT_REDIRECTS": False}
 FILE_UPLOAD_DIR = os.path.join(TCMS_ROOT_PATH, "..", "uploads")
 
 ASYNC_TASK = "DISABLED"
+SIGNAL_PLUGINS = [
+    "tcms.plugins_support.auto_bug_plugin",
+]
