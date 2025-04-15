@@ -1,5 +1,12 @@
 {
     "python.analysis.extraPaths": [
-        "./tcms_api"
-    ]
+        "./tcms_api",
+        "./tcms",                         // cho các module plugin như auto_bug_plugin
+        "./tcms/testcases",              // cho models
+        "./tcms/testruns",
+        "./tcms/plugins_support"
+    ],
+    "python.pythonPath": "./.venv/bin/python",   // đảm bảo VS Code dùng đúng venv trên PC
+    // "python.pythonPath": "./venv/bin/python",    // đảm bảo VS Code dùng đúng venv trên LAP
+    "python.envFile": "${workspaceFolder}/.env"  // load biến môi trường
 }

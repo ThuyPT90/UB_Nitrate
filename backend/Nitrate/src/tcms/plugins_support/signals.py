@@ -4,6 +4,15 @@ from django.db.models import Model, signals
 from tcms.core.models import signals as tcms_signals
 from tcms.plugins_support.processors import pstp
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver as django_receiver
+from tcms.testruns.models import TestCaseRun
+
+@django_receiver(post_save, sender=TestCaseRun)
+def trigger_autobug_on_save(sender, instance, **kwargs):
+    # Tự động đẩy signal update khi test case run được lưu
+    pstp.push(sender, instance, "update")
+
 # Initial the registered models
 REGISTERED_MODELS: dict[Type[Model], "GlobalSignalProcessor"] = {}
 

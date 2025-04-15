@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import threading
-from importlib import import_module
-
 from django.conf import settings
 
 
@@ -21,11 +19,16 @@ class PushSignalToPlugins:
         self.plugins = []
 
     def import_plugins(self):
-        if not hasattr(settings, "SIGNAL_PLUGINS") or not settings.SIGNAL_PLUGINS:
-            return
+        from importlib import import_module
 
-        for p in settings.SIGNAL_PLUGINS:
-            self.plugins.append(import_module(p))
+        plugins = getattr(settings, "SIGNAL_PLUGINS", [])
+        for plugin in plugins:
+            if plugin == "tcms.plugins_support.auto_bug_plugin":
+                # ✅ Tránh import vòng
+                import tcms.plugins_support.auto_bug_plugin as auto_plugin
+                self.plugins.append(auto_plugin)
+            else:
+                self.plugins.append(import_module(plugin))
 
     def push(self, model, instance, signal):
         for p in self.plugins:
