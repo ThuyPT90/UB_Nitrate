@@ -4,9 +4,10 @@ import re
 import requests
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
-from .config import JIRA_URL, JIRA_USER, JIRA_PASS, JIRA_PROJECT_KEY, JIRA_ISSUE_TYPE
+from tcms_api.bug.config import JIRA_URL, JIRA_USER, JIRA_PASS, JIRA_PROJECT_KEY, JIRA_ISSUE_TYPE
 
-def parse_jira_fields_from_comment(comment: str) -> dict:
+
+def parse_jira_fields_from_comment(comment: str, testcase, instance) -> dict:
     fields = {}
     patterns = {
         "assignee": r"assignee:\s*(\S+)",
@@ -26,24 +27,29 @@ def parse_jira_fields_from_comment(comment: str) -> dict:
 
     now_str = datetime.now().strftime("%Y-%m-%d")
     fields.setdefault("assignee", JIRA_USER)
-    fields.setdefault("epic_id", "EPIC-UNKNOWN")
+    fields.setdefault("epic_id", "PAYT-875")
     fields.setdefault("due_date", now_str)
     fields.setdefault("summary", "Không có tiêu đề bug")
     fields.setdefault("expected_result", "Không có mô tả kết quả dự kiến")
-    from datetime import datetime
+    fields.setdefault("step", "")
+    fields["case_id"] = testcase.pk
+    fields["case_run_id"] = instance.pk
+    # fields["step"] = fields.get("step", "").strip() or (testcase.actions or "")
+    # fields["pre_condition"] = fields.get("pre_condition", "").strip() or (testcase.setup or "")
+    # fields["expected_result"] = fields.get("expected_result", "").strip() or (testcase.expected_results or "")
     now_str = datetime.now().strftime("%Y-%m-%d")
     fields["start_date"] = fields.get("start_date", "").strip()
     if not fields["start_date"]:
         fields["start_date"] = now_str
 
     fields["description"] = (
-        
+        f"*TestCase ID:* {fields.get('case_id', '')}<br/>"
         f"*Case Run ID:* {fields.get('case_run_id', '')}<br/><br/>"
         f"*Điều kiện cần thiết:*<br/>{fields.get('pre_condition', '')}<br/><br/>"
         f"*Bước thực hiện:*<br/>{fields.get('step', '')}<br/><br/>"
         f"*Kết quả mong muốn:*<br/>{fields['expected_result']}<br/>"
         f"*Link evidence:*<br/>{fields.get('evidence', '')}<br/><br/>"
-        f"*Ghi chú ban đầu:*<br/>{comment}<br/>"
+        # f"*Ghi chú ban đầu:*<br/>{comment}<br/>"
     )
 
     return fields
@@ -73,7 +79,7 @@ def create_jira_bug(case_id, notes, fields):
 
     print("\n🚀 Đang gửi dữ liệu tạo bug lên Jira...")
     print("📦 Payload:", bug_data)
-    print("📦 Payload gửi lên Jira:", json.dumps(bug_data, indent=2))
+    
     try:
         response = requests.post(
             JIRA_URL,

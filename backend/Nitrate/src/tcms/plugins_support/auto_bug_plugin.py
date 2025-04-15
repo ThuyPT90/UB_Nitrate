@@ -8,7 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from tcms.comments.models import Comment
 
 try:
-    from bug.jira_helper  import create_jira_bug, parse_jira_fields_from_comment
+    from tcms_api.bug.jira_helper import create_jira_bug, parse_jira_fields_from_comment
+
     print("✅ Đã nạp thành công bug.nitrate_helper")
 except ImportError as e:
     print("⚠️ Không tìm thấy bug.nitrate_helper – plugin auto bug sẽ không hoạt động!")
@@ -55,7 +56,11 @@ def receiver(context):
     print(f"🐞 AutoBug: TestCase #{testcase.pk} FAILED – đang tạo Jira Bug...")
     if create_jira_bug and parse_jira_fields_from_comment:
         try:
-            fields = parse_jira_fields_from_comment(notes)
+            fields = parse_jira_fields_from_comment(notes, testcase, instance)
+            print("📋 Mô tả bug gửi đi:")
+            for k, v in fields.items():
+                print(f" - {k}: {v}")
+
             create_jira_bug(testcase.pk, notes, fields)
         except Exception as e:
             print(f"❌ AutoBug ERROR: {e}")
