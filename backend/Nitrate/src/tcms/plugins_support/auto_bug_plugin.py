@@ -6,6 +6,7 @@ from tcms.testruns.models import TestCaseRun
 from tcms.testruns.status import TestCaseRunStatus
 from django.contrib.contenttypes.models import ContentType
 from tcms.comments.models import Comment
+from tcms_api.bug.jira_helper import get_issue_status
 
 try:
     from tcms_api.bug.jira_helper import create_jira_bug, parse_jira_fields_from_comment
@@ -17,71 +18,114 @@ except ImportError as e:
     create_jira_bug = None
     parse_jira_fields_from_comment = None   # ✅ Thêm dòng này để tránh lỗi "not defined"
 
+def extract_summary_expected(comment_text):
+    summary = ""
+    expected = ""
+    for line in comment_text.splitlines():
+        line = line.strip()
+        if line.lower().startswith("summary:"):
+            summary = line[8:].strip()
+        elif line.lower().startswith("expected_result:"):
+            expected = line[16:].strip()
+    return summary, expected
+
 def receiver(context): 
-    print("🐞 AutoBugPlugin đã được kích hoạt bởi post_save signal")
-    print("🐞 [AutoBugPlugin] 👉 receiver(context) được gọi!")
-    print("📦 Context nhận được:", context)
-    print("🧪 Plugin auto_bug_plugin đang xử lý context")
 
     instance = context.get("instance")
+    print("🐞 [AutoBugPlugin] 👉 receiver(context) được gọi!")
+
+    if instance is None:
+        print("⚠️ Không tìm thấy instance trong context!")
+        return
+    if getattr(instance, '_auto_bug_handled', False):
+        print("⛔️ Đã xử lý bug cho TestCaseRun này – bỏ qua.")
+        return
+    instance._auto_bug_handled = True
+
     signal = context.get("signal")
      # 👉 Chỉ xử lý nếu là TestCaseRun
+    print(f"🔔 Signal nhận được: {getattr(signal, '__name__', str(signal))}, Model: {type(instance).__name__}")
+
+    # Kiểm tra đúng model và signal là testcase run không
     if not isinstance(instance, TestCaseRun):
-        print(f"⚠️ Bỏ qua vì không phải TestCaseRun: {type(instance)}")
+        print("⚠️Kiểm tra nếu không phải TestCaseRun – bỏ qua.")
         return
-    
-    print(f"🔔 Tín hiệu nhận: {signal}, Model: {type(instance).__name__}")
-    if not isinstance(instance, TestCaseRun):
-        print("⚠️ Không phải TestCaseRun – bỏ qua.")
-        return
+
+    # ✅ In trạng thái trước khi so sánh
     print(f"📌 TestCaseRun case_run_status_id = {instance.case_run_status_id}")
-
-    # Kiểm tra đúng model và signal là UPDATE
-    if not isinstance(instance, TestCaseRun):
-        print("⚠️ Không phải TestCaseRun – bỏ qua.")
-        return
-    if signal != "update":
-        return
-    
-    # Chỉ trigger khi FAILED
     if instance.case_run_status_id != TestCaseRunStatus.FAILED:
-        print(f"📌 TestCaseRun case_run_status_id = {instance.case_run_status_id}")
-        print("✅ Không phải trạng thái FAILED – bỏ qua.")
+        print("⚠️ Không phải TestCaseRun FAILED – bỏ qua.")
         return
     
-    testcase = instance.case
-
     content_type = ContentType.objects.get_for_model(instance)
+    # Lấy comment mới nhất để phân tích nội dung tạo bug
     latest_comment = Comment.objects.filter(
         content_type=content_type,
         object_pk=str(instance.pk)
     ).order_by('-submit_date').first()
+    latest_text = latest_comment.comment if latest_comment else ""
+    summary_new, expected_new = extract_summary_expected(latest_text)
+    print(f"📋 Nội dung comment gần nhất:\n{latest_text}")
+    print(f"📝 Summary mới: {summary_new}")
+    print(f"✅ Expected mới: {expected_new}")
+    if not summary_new or not expected_new:
+        print("⚠️ Thiếu summary hoặc expected_result trong comment – không tạo Jira bug.")
+        return
 
-    notes = latest_comment.comment if latest_comment else ""
-    
+    #  ✅ Kiểm tra comment cũ có chứa bug Jira và so sánh nội dung
+    existing_comments = Comment.objects.filter(
+        content_type=content_type,
+        object_pk=str(instance.pk)
+    )
+    for c in existing_comments:
+        if "JIRA BUG:" in c.comment:
+            summary_old, expected_old = extract_summary_expected(c.comment)
+            print(f"📋 So sánh với bug cũ – Summary: {summary_old} | Expected: {expected_old}")
+            if summary_old == summary_new and expected_old == expected_new:
+                print("🔁 Nội dung bug giống nhau – không tạo lại.")
+                return
+
+    print("🆕 Nội dung bug khác – bắt đầu tạo Jira Bug...")  
+    testcase = instance.case
+    notes = latest_text
     print(f"📝 TestCase Notes: {notes}")
-    print(f"🐞 Đã phát hiện TestCaseRun FAILED – sắp tạo bug cho testcase #{testcase.pk}")
     print(f"🐞 AutoBug: TestCase #{testcase.pk} FAILED – đang tạo Jira Bug...")
-        
+
     if create_jira_bug and parse_jira_fields_from_comment:
         try:
             print(f"📌 CaseRun ID = {instance.pk}, Case ID = {instance.case.pk}")
+            # Đặt cờ đã xử lý để tránh bị gọi lại
+            setattr(instance, '_auto_bug_handled', True)
             fields = parse_jira_fields_from_comment(notes, testcase, instance)
-            print("📋 Mô tả bug gửi đi:")
-            for k, v in fields.items():
-                print(f" - {k}: {v}")
-            
+
             # 📝 In ra trước nội dung mô tả trước khi gửi lên Jira
             print("\n📋 Mô tả sẽ gửi lên Jira:")
             print(fields["description"])  # 👈 in nội dung mô tả bug
-
+            
             # 🛑 Tạm thời không gửi bug lên Jira
             create_jira_bug(testcase.pk, notes, fields)
+            # print("🛑 Đã dừng lại trước khi tạo Jira bug – chỉ hiển thị nội dung để kiểm tra.")
             print("🚀 Bắt đầu gọi API tạo bug Jira...")
             bug_url = create_jira_bug(testcase.pk, notes, fields)
             print(f"🐞 Đã tạo bug: {bug_url}")
-            # print("🛑 Đã dừng lại trước khi tạo Jira bug – chỉ hiển thị nội dung để kiểm tra.")
+
         except Exception as e:
             print(f"❌ AutoBug ERROR: {e}")
+        # # ✅ Ghi comment sau khi bug tạo thành công – đảm bảo luôn được thực hiện
+        # user = context.get("user")
+        # user_id = user.id if user else 1
+
+        # try:
+        #     Comment.objects.create(
+        #         content_type=content_type,
+        #         object_pk=str(instance.pk),
+        #         user_id=user_id,
+        #         comment=f"JIRA BUG: {bug_url}\nsummary: {summary_new}\nexpected_result: {expected_new}"
+        #     )
+        #     print("📝 Đã ghi comment Jira BUG vào TestCaseRun thành công.")
+        # except Exception as e:
+        #     print(f"⚠️ Ghi comment thất bại: {e}")
     else:
         print("🚫 Hàm tạo Jira Bug chưa sẵn sàng – bỏ qua.")
+
+

@@ -6,7 +6,7 @@
         "./tcms/testruns",
         "./tcms/plugins_support"
     ],
-    "python.pythonPath": "./.venv/bin/python",   // đảm bảo VS Code dùng đúng venv trên PC
-    // "python.pythonPath": "./venv/bin/python",    // đảm bảo VS Code dùng đúng venv trên LAP
+    // "python.pythonPath": "./.venv/bin/python",   // đảm bảo VS Code dùng đúng venv trên PC
+    "python.pythonPath": "./venv/bin/python",    // đảm bảo VS Code dùng đúng venv trên LAP
     "python.envFile": "${workspaceFolder}/.env"  // load biến môi trường
 }

@@ -1,9 +1,13 @@
 import re
+import json
 import requests
 import html
+
+# from jira import JIRA
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
 from tcms_api.bug.config import JIRA_URL, JIRA_USER, JIRA_PASS, JIRA_PROJECT_KEY, JIRA_ISSUE_TYPE
+# from tcms_api.bug.config import JIRA_SERVER, JIRA_USER, JIRA_API_TOKEN
 
 def strip_paragraph_tags(text):
     """Chuyển <p>...</p> thành xuống dòng bằng <br/>"""
@@ -90,7 +94,7 @@ def create_jira_bug(case_id, notes, fields):
     print(f"🔐 Jira Password (ẩn): {JIRA_PASS[:3]}***")
 
     summary = f"[AUTO][TC#{case_id}] {fields['summary'][:80]}"
-
+    
     bug_data = {
         "fields": {
             "project": {"key": JIRA_PROJECT_KEY},
@@ -107,13 +111,18 @@ def create_jira_bug(case_id, notes, fields):
 
     print("\n🚀 Đang gửi dữ liệu tạo bug lên Jira...")
     print("📦 Payload:", bug_data)
-    
+
     try:
+        payload =  bug_data    
+
+        print("📦 Payload gửi Jira:")
+        print(json.dumps(payload, indent=2))
+
         response = requests.post(
             JIRA_URL,
             auth=HTTPBasicAuth(JIRA_USER, JIRA_PASS),
             json=bug_data,
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
             data=json.dumps(payload)
         )
         print(f"🔁 Jira Response: {response.status_code} - {response.text}")
@@ -145,3 +154,15 @@ def create_jira_bug(case_id, notes, fields):
 
     except Exception as e:
         print(f"💥 Lỗi khi kết nối Jira: {e}")
+
+def get_jira_client():
+    return JIRA(server=JIRA_SERVER, basic_auth=(JIRA_USER, JIRA_API_TOKEN))
+
+def get_issue_status(issue_key: str) -> str:
+    try:
+        jira = get_jira_client()
+        issue = jira.issue(issue_key)
+        return issue.fields.status.name  # ví dụ: "To Do", "In Progress", "Closed"
+    except Exception as e:
+        print(f"❌ Lỗi khi kiểm tra trạng thái Jira bug {issue_key}: {e}")
+        return "UNKNOWN"       
