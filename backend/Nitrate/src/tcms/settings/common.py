@@ -188,14 +188,14 @@ INSTALLED_APPS = (
     "tcms.issuetracker",
     "tcms.management",
     "tcms.profiles",
-    "tcms.testcases",
     "tcms.testplans",
     "tcms.testruns",
     "tcms.xmlrpc.apps.AppConfig",
     "tcms.report",
+    'tcms.core',
     # core app must be here in order to use permissions created during creating
     # modules for above apps.
-    "tcms.core.apps.AppConfig",
+    "tcms.testcases.apps.TestCasesConfig",
 )
 
 SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"

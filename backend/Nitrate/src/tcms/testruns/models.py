@@ -570,7 +570,10 @@ class TestCaseRun(TCMSActionModel):
             )[0]
         except IndexError:
             return NoneText
-
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from tcms.plugins_support.processors import pstp
+        pstp.push(type(self), self, "update")
 
 class TestRunTag(models.Model):
     tag = models.ForeignKey("management.TestTag", on_delete=models.CASCADE)

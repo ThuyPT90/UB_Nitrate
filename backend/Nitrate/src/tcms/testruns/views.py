@@ -685,6 +685,7 @@ def get(request, run_id, template_name="run/get.html"):
         "case_own_tags": ttags,
         "issue_trackers": tr.get_issue_trackers(),
     }
+    print(f"📄 Đang render template: {template_name}")
     return render(request, template_name, context=context_data)
 
 

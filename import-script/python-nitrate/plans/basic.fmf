@@ -1,5 +1,0 @@
-summary: Basic sanity checks
-discover:
-    how: fmf
-execute:
-    how: tmt

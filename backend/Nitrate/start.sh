@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # Đi vào thư mục dự án
-cd ~/UB_Nitrate/backend/Nitrate
+cd ~/UB_Nitrate/backend/Nitrate/src
 
 # Kích hoạt môi trường ảo
 # Kích hoạt venv (nếu tồn tại)
