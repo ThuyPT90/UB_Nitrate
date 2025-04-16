@@ -41,7 +41,6 @@ def receiver(context):
         print("⛔️ Đã xử lý bug cho TestCaseRun này – bỏ qua.")
         return
     instance._auto_bug_handled = True
-
     signal = context.get("signal")
      # 👉 Chỉ xử lý nếu là TestCaseRun
     print(f"🔔 Signal nhận được: {getattr(signal, '__name__', str(signal))}, Model: {type(instance).__name__}")
@@ -56,8 +55,22 @@ def receiver(context):
     if instance.case_run_status_id != TestCaseRunStatus.FAILED:
         print("⚠️ Không phải TestCaseRun FAILED – bỏ qua.")
         return
-    
     content_type = ContentType.objects.get_for_model(instance)
+    existing_bug_comments = Comment.objects.filter(
+        content_type=content_type,
+        object_pk=str(instance.pk),
+        comment__icontains="JIRA BUG:"
+    ).order_by('-submit_date')
+
+    print(f"🧪 Số comment Jira BUG tìm được: {existing_bug_comments.count()}")
+    for c in existing_bug_comments:
+        print(f"📝 Cmt: {c.comment[:100]}...")  # In 100 ký tự đầu
+
+    print(f"🔍 content_type ID = {content_type.id}, object_pk = {instance.pk}")
+    if existing_bug_comments.exists():
+        print("🔁 Đã có comment chứa Jira bug – bỏ qua.")
+        return
+    
     # Lấy comment mới nhất để phân tích nội dung tạo bug
     latest_comment = Comment.objects.filter(
         content_type=content_type,
@@ -79,8 +92,16 @@ def receiver(context):
     )
     for c in existing_comments:
         if "JIRA BUG:" in c.comment:
-            summary_old, expected_old = extract_summary_expected(c.comment)
-            print(f"📋 So sánh với bug cũ – Summary: {summary_old} | Expected: {expected_old}")
+            print(f"Có bug Jira")
+            return
+        latest_bug_comment = Comment.objects.filter(
+            content_type=content_type,
+            object_pk=str(instance.pk),
+            comment__icontains="JIRA BUG:"
+        ).order_by('-submit_date').first()
+        if latest_bug_comment:
+            summary_old, expected_old = extract_summary_expected(latest_bug_comment.comment)
+            print(f"📋 So sánh với bug cũ – Summary: {summary_old} | Expected: {expected_old}")    
             if summary_old == summary_new and expected_old == expected_new:
                 print("🔁 Nội dung bug giống nhau – không tạo lại.")
                 return
@@ -103,12 +124,17 @@ def receiver(context):
             print(fields["description"])  # 👈 in nội dung mô tả bug
             
             # 🛑 Tạm thời không gửi bug lên Jira
-            create_jira_bug(testcase.pk, notes, fields)
             # print("🛑 Đã dừng lại trước khi tạo Jira bug – chỉ hiển thị nội dung để kiểm tra.")
             print("🚀 Bắt đầu gọi API tạo bug Jira...")
             bug_url = create_jira_bug(testcase.pk, notes, fields)
             print(f"🐞 Đã tạo bug: {bug_url}")
-
+            # ✅ Ghi bug_url vào comment gần nhất
+            if latest_comment:
+                latest_comment.comment += f"\nJIRA BUG: {bug_url}"
+                latest_comment.save()
+                print("✅ Đã thêm thông tin Jira BUG vào comment gần nhất.")
+            else:
+                print("⚠️ Không tìm thấy comment gần nhất để cập nhật.")
         except Exception as e:
             print(f"❌ AutoBug ERROR: {e}")
         # # ✅ Ghi comment sau khi bug tạo thành công – đảm bảo luôn được thực hiện
